@@ -75,16 +75,6 @@ export default function Login() {
               Ensuring academic integrity with real-time surveillance and instant alerts.
             </p>
             
-            <div className="grid grid-cols-2 gap-4 pt-6">
-              <div className="rounded-lg bg-primary-foreground/10 p-4 backdrop-blur">
-                <p className="text-3xl font-bold">99.9%</p>
-                <p className="text-sm text-primary-foreground/70">Detection Accuracy</p>
-              </div>
-              <div className="rounded-lg bg-primary-foreground/10 p-4 backdrop-blur">
-                <p className="text-3xl font-bold">&lt;1s</p>
-                <p className="text-sm text-primary-foreground/70">Alert Response</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -165,15 +155,6 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm text-muted-foreground text-center">
-              <strong className="text-foreground">Demo Credentials:</strong>
-              <br />
-              Invigilator: INV001 / password123
-              <br />
-              Admin: ADM001 / admin123
-            </p>
-          </div>
         </div>
       </div>
     </div>
