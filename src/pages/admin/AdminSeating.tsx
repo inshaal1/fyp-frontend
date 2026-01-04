@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Save, RotateCcw, User, X } from "lucide-react";
+import { useState, useRef } from "react";
+import { Save, RotateCcw, User, X, Upload, FileSpreadsheet, Check } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,18 +32,10 @@ interface ExamHall {
   seats: Seat[][];
 }
 
-const students = [
-  { id: "STU2024001", name: "John Smith" },
-  { id: "STU2024002", name: "Emily Davis" },
-  { id: "STU2024003", name: "Michael Brown" },
-  { id: "STU2024004", name: "Sarah Wilson" },
-  { id: "STU2024005", name: "David Lee" },
-  { id: "STU2024006", name: "Jessica Taylor" },
-  { id: "STU2024007", name: "Chris Johnson" },
-  { id: "STU2024008", name: "Amanda White" },
-  { id: "STU2024009", name: "Robert Garcia" },
-  { id: "STU2024010", name: "Lisa Martinez" },
-];
+interface Student {
+  id: string;
+  name: string;
+}
 
 const createInitialSeating = (rows: number, cols: number): Seat[][] => {
   return Array.from({ length: rows }, (_, rowIndex) =>
@@ -55,37 +47,100 @@ const createInitialSeating = (rows: number, cols: number): Seat[][] => {
   );
 };
 
-const mockExamHalls: ExamHall[] = [
-  {
-    id: "1",
-    name: "Hall A - Block 1",
-    rows: 5,
-    cols: 10,
-    seats: createInitialSeating(5, 10),
-  },
-  {
-    id: "2",
-    name: "Hall B - Block 1",
-    rows: 5,
-    cols: 8,
-    seats: createInitialSeating(5, 8),
-  },
-  {
-    id: "3",
-    name: "Hall C - Block 2",
-    rows: 6,
-    cols: 12,
-    seats: createInitialSeating(6, 12),
-  },
-];
-
 export default function AdminSeating() {
-  const [selectedHallId, setSelectedHallId] = useState("1");
-  const [halls, setHalls] = useState(mockExamHalls);
+  const [seatingPlanUploaded, setSeatingPlanUploaded] = useState(false);
+  const [studentsUploaded, setStudentsUploaded] = useState(false);
+  const [halls, setHalls] = useState<ExamHall[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedHallId, setSelectedHallId] = useState<string>("");
   const [selectedSeat, setSelectedSeat] = useState<{ row: number; col: number } | null>(null);
   const [studentSearch, setStudentSearch] = useState("");
+  
+  const seatingPlanInputRef = useRef<HTMLInputElement>(null);
+  const studentsInputRef = useRef<HTMLInputElement>(null);
 
   const selectedHall = halls.find((h) => h.id === selectedHallId) || halls[0];
+
+  const handleSeatingPlanUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Mock parsing seating plan file - in real app this would parse CSV/Excel
+    const mockHalls: ExamHall[] = [
+      {
+        id: "1",
+        name: "Hall A - Block 1",
+        rows: 5,
+        cols: 10,
+        seats: createInitialSeating(5, 10),
+      },
+      {
+        id: "2",
+        name: "Hall B - Block 1",
+        rows: 5,
+        cols: 8,
+        seats: createInitialSeating(5, 8),
+      },
+      {
+        id: "3",
+        name: "Hall C - Block 2",
+        rows: 6,
+        cols: 12,
+        seats: createInitialSeating(6, 12),
+      },
+    ];
+
+    setHalls(mockHalls);
+    setSelectedHallId(mockHalls[0].id);
+    setSeatingPlanUploaded(true);
+    toast.success(`Seating plan uploaded: ${file.name}`);
+  };
+
+  const handleStudentsUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Mock parsing students file - in real app this would parse CSV/Excel
+    const mockStudents: Student[] = [
+      { id: "STU2024001", name: "John Smith" },
+      { id: "STU2024002", name: "Emily Davis" },
+      { id: "STU2024003", name: "Michael Brown" },
+      { id: "STU2024004", name: "Sarah Wilson" },
+      { id: "STU2024005", name: "David Lee" },
+      { id: "STU2024006", name: "Jessica Taylor" },
+      { id: "STU2024007", name: "Chris Johnson" },
+      { id: "STU2024008", name: "Amanda White" },
+      { id: "STU2024009", name: "Robert Garcia" },
+      { id: "STU2024010", name: "Lisa Martinez" },
+    ];
+
+    setStudents(mockStudents);
+    setStudentsUploaded(true);
+    toast.success(`Students file uploaded: ${file.name}`);
+
+    // Auto-map students to seats
+    autoMapStudents(mockStudents);
+  };
+
+  const autoMapStudents = (studentList: Student[]) => {
+    setHalls((prev) => {
+      let studentIndex = 0;
+      return prev.map((hall) => {
+        const newSeats = hall.seats.map((row) =>
+          row.map((seat) => {
+            if (studentIndex < studentList.length) {
+              const student = studentList[studentIndex];
+              studentIndex++;
+              return { ...seat, studentId: student.id, studentName: student.name };
+            }
+            return seat;
+          })
+        );
+        return { ...hall, seats: newSeats };
+      });
+    });
+    toast.success("Students automatically mapped to seats");
+  };
 
   const handleAssignStudent = (studentId: string, studentName: string) => {
     if (!selectedSeat) return;
@@ -157,8 +212,97 @@ export default function AdminSeating() {
       s.id.toLowerCase().includes(studentSearch.toLowerCase())
   );
 
-  const assignedCount = selectedHall.seats.flat().filter((s) => s.studentId).length;
-  const totalSeats = selectedHall.rows * selectedHall.cols;
+  const assignedCount = selectedHall?.seats.flat().filter((s) => s.studentId).length || 0;
+  const totalSeats = selectedHall ? selectedHall.rows * selectedHall.cols : 0;
+
+  // Upload UI when no seating plan is uploaded yet
+  if (!seatingPlanUploaded) {
+    return (
+      <DashboardLayout
+        userRole={mockUser.role}
+        userName={mockUser.name}
+        userId={mockUser.id}
+        pageTitle="Manage Seating Plan"
+      >
+        <div className="flex items-center justify-center min-h-[60vh] animate-fade-in">
+          <div className="text-center space-y-6 max-w-md">
+            <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+              <FileSpreadsheet className="h-10 w-10 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-foreground mb-2">Upload Seating Plan</h2>
+              <p className="text-muted-foreground text-sm">
+                Upload a seating plan file (CSV/Excel) to define exam halls and seat layouts
+              </p>
+            </div>
+            <input
+              ref={seatingPlanInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleSeatingPlanUpload}
+              className="hidden"
+            />
+            <Button onClick={() => seatingPlanInputRef.current?.click()} size="lg">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Seating Plan
+            </Button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Upload students UI when seating plan is uploaded but students aren't
+  if (!studentsUploaded) {
+    return (
+      <DashboardLayout
+        userRole={mockUser.role}
+        userName={mockUser.name}
+        userId={mockUser.id}
+        pageTitle="Manage Seating Plan"
+      >
+        <div className="flex items-center justify-center min-h-[60vh] animate-fade-in">
+          <div className="text-center space-y-6 max-w-md">
+            <div className="flex justify-center gap-4 mb-4">
+              <div className="flex items-center gap-2 text-success">
+                <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                  <Check className="h-4 w-4 text-success-foreground" />
+                </div>
+                <span className="text-sm font-medium">Seating Plan</span>
+              </div>
+              <div className="w-8 h-px bg-border self-center" />
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center text-xs font-medium">
+                  2
+                </div>
+                <span className="text-sm">Students</span>
+              </div>
+            </div>
+            <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+              <User className="h-10 w-10 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-foreground mb-2">Upload Students List</h2>
+              <p className="text-muted-foreground text-sm">
+                Upload a students file (CSV/Excel) to automatically map students to seats
+              </p>
+            </div>
+            <input
+              ref={studentsInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleStudentsUpload}
+              className="hidden"
+            />
+            <Button onClick={() => studentsInputRef.current?.click()} size="lg">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Students List
+            </Button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout
@@ -224,7 +368,7 @@ export default function AdminSeating() {
             </div>
 
             <div className="flex flex-col gap-2 items-center overflow-x-auto pb-4">
-              {selectedHall.seats.map((row, rowIndex) => (
+              {selectedHall?.seats.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-2">
                   <span className="w-6 text-xs text-muted-foreground flex items-center justify-center">
                     {String.fromCharCode(65 + rowIndex)}
@@ -281,7 +425,7 @@ export default function AdminSeating() {
           {/* Student Assignment Panel */}
           <div className="bg-card rounded-lg border border-border p-4 shadow-card">
             <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
-              Assign Student
+              Change Seat Assignment
             </h3>
 
             {selectedSeat ? (
@@ -289,7 +433,7 @@ export default function AdminSeating() {
                 <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
                   <p className="text-xs text-muted-foreground">Selected Seat</p>
                   <p className="font-semibold text-lg text-primary">
-                    {selectedHall.seats[selectedSeat.row][selectedSeat.col].id}
+                    {selectedHall?.seats[selectedSeat.row][selectedSeat.col].id}
                   </p>
                 </div>
 
@@ -333,7 +477,7 @@ export default function AdminSeating() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
-                Click on an available seat to assign a student
+                Click on any seat to reassign a student
               </p>
             )}
           </div>
