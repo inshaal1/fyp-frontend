@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -9,8 +10,12 @@ import {
   FileText,
   Grid3X3,
   Eye,
+  Menu,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface SidebarProps {
   userRole: "admin" | "invigilator";
@@ -32,16 +37,21 @@ const adminNavItems = [
   { to: "/admin/reports", icon: FileText, label: "Reports" },
 ];
 
-export function DashboardSidebar({ userRole, userName, userId }: SidebarProps) {
+function SidebarContent({ userRole, userName, userId, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
   const navigate = useNavigate();
   const navItems = userRole === "admin" ? adminNavItems : invigilatorNavItems;
 
   const handleLogout = () => {
+    onNavigate?.();
     navigate("/");
   };
 
+  const handleNavClick = () => {
+    onNavigate?.();
+  };
+
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       {/* Logo */}
       <div className="flex items-center gap-3 border-b border-sidebar-border px-6 py-5">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary">
@@ -75,6 +85,7 @@ export function DashboardSidebar({ userRole, userName, userId }: SidebarProps) {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={handleNavClick}
             className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
@@ -100,6 +111,38 @@ export function DashboardSidebar({ userRole, userName, userId }: SidebarProps) {
           Logout
         </button>
       </div>
-    </aside>
+    </div>
+  );
+}
+
+export function DashboardSidebar({ userRole, userName, userId }: SidebarProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      <div className="fixed left-4 top-4 z-50 lg:hidden">
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="bg-background shadow-md">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0">
+            <SidebarContent
+              userRole={userRole}
+              userName={userName}
+              userId={userId}
+              onNavigate={() => setMobileOpen(false)}
+            />
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 lg:flex lg:flex-col">
+        <SidebarContent userRole={userRole} userName={userName} userId={userId} />
+      </aside>
+    </>
   );
 }

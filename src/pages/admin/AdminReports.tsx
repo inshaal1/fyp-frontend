@@ -100,14 +100,14 @@ export default function AdminReports() {
       <div className="space-y-6 animate-fade-in">
         {/* Filters */}
         <div className="bg-card rounded-lg border border-border p-4 shadow-card">
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 items-end">
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Start Date</Label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-40"
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -116,13 +116,13 @@ export default function AdminReports() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-40"
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Exam Hall</Label>
               <Select value={hallFilter} onValueChange={setHallFilter}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,13 +137,15 @@ export default function AdminReports() {
             </div>
             <Button
               variant="outline"
+              size="sm"
+              className="h-10"
               onClick={() => {
                 setStartDate("");
                 setEndDate("");
                 setHallFilter("all");
               }}
             >
-              Clear Filters
+              Clear
             </Button>
           </div>
         </div>
@@ -177,14 +179,14 @@ export default function AdminReports() {
         </div>
 
         {/* Export Buttons */}
-        <div className="flex gap-3">
-          <Button onClick={() => handleExport("pdf")} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export PDF
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Button onClick={() => handleExport("pdf")} variant="outline" size="sm">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export PDF</span>
           </Button>
-          <Button onClick={() => handleExport("csv")} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
+          <Button onClick={() => handleExport("csv")} variant="outline" size="sm">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export CSV</span>
           </Button>
         </div>
 

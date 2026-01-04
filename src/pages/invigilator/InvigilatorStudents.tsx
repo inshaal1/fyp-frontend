@@ -87,10 +87,10 @@ export default function InvigilatorStudents() {
       userId={mockUser.id}
       pageTitle="Student List"
     >
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name or ID..."
@@ -100,9 +100,9 @@ export default function InvigilatorStudents() {
             />
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-full sm:w-36">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -113,7 +113,7 @@ export default function InvigilatorStudents() {
             </Select>
 
             <Select value={hallFilter} onValueChange={setHallFilter}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-full sm:w-36">
                 <SelectValue placeholder="Hall" />
               </SelectTrigger>
               <SelectContent>

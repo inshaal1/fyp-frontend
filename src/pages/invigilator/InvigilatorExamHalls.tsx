@@ -110,12 +110,12 @@ export default function InvigilatorExamHalls() {
       userId={mockUser.id}
       pageTitle="Exam Hall Details"
     >
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
         {/* Hall Selector */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <label className="text-sm font-medium text-foreground">Select Exam Hall:</label>
           <Select value={selectedHallId} onValueChange={setSelectedHallId}>
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-full sm:w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -156,12 +156,12 @@ export default function InvigilatorExamHalls() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Seating Layout */}
-          <div className="lg:col-span-2 bg-card rounded-lg border border-border p-6 shadow-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Seating Layout</h3>
-              <div className="flex items-center gap-4 text-xs">
+          <div className="lg:col-span-2 bg-card rounded-lg border border-border p-4 sm:p-6 shadow-card">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground">Seating Layout</h3>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded bg-success/60 border border-success" />
                   <span className="text-muted-foreground">Occupied</span>
@@ -179,22 +179,22 @@ export default function InvigilatorExamHalls() {
             
             {/* Stage/Front indicator */}
             <div className="mb-4 text-center">
-              <div className="inline-block px-6 py-1 bg-muted rounded text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="inline-block px-4 sm:px-6 py-1 bg-muted rounded text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Front / Stage
               </div>
             </div>
 
             {/* Seating Grid */}
-            <div className="flex flex-col gap-2 items-center">
+            <div className="flex flex-col gap-1 sm:gap-2 items-center overflow-x-auto pb-2">
               {selectedHall.seating.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-2">
-                  <span className="w-6 text-xs text-muted-foreground flex items-center justify-center">
+                <div key={rowIndex} className="flex gap-1 sm:gap-2">
+                  <span className="w-5 sm:w-6 text-xs text-muted-foreground flex items-center justify-center">
                     {String.fromCharCode(65 + rowIndex)}
                   </span>
                   {row.map((seat, seatIndex) => (
                     <div
                       key={seatIndex}
-                      className={`w-8 h-8 rounded border-2 transition-all duration-200 hover:scale-110 cursor-pointer ${seatColors[seat]}`}
+                      className={`w-6 h-6 sm:w-8 sm:h-8 rounded border-2 transition-all duration-200 hover:scale-110 cursor-pointer ${seatColors[seat]}`}
                       title={`Seat ${String.fromCharCode(65 + rowIndex)}${seatIndex + 1} - ${seat}`}
                     />
                   ))}
@@ -204,9 +204,9 @@ export default function InvigilatorExamHalls() {
           </div>
 
           {/* Camera List */}
-          <div className="bg-card rounded-lg border border-border p-6 shadow-card">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Camera List</h3>
-            <div className="space-y-3">
+          <div className="bg-card rounded-lg border border-border p-4 sm:p-6 shadow-card">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4">Camera List</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
               {selectedHall.cameras.map((camera) => (
                 <div
                   key={camera.id}
