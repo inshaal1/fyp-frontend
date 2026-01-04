@@ -370,75 +370,77 @@ export default function AdminSeating() {
     >
       <div className="space-y-6 animate-fade-in">
         {/* Header Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-foreground">Exam Hall:</label>
-            <Select value={selectedHallId} onValueChange={setSelectedHallId}>
-              <SelectTrigger className="w-56">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {halls.map((hall) => (
-                  <SelectItem key={hall.id} value={hall.id}>
-                    {hall.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <label className="text-sm font-medium text-foreground">Exam Hall:</label>
+              <Select value={selectedHallId} onValueChange={setSelectedHallId}>
+                <SelectTrigger className="w-full sm:w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {halls.map((hall) => (
+                    <SelectItem key={hall.id} value={hall.id}>
+                      {hall.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex gap-3">
-            <input
-              ref={seatingPlanInputRef}
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={handleSeatingPlanUpload}
-              className="hidden"
-            />
-            <Button variant="outline" onClick={() => seatingPlanInputRef.current?.click()}>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload New Plan
-            </Button>
-            <Button variant="outline" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset Layout
-            </Button>
-            <Button onClick={handleSave}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Seating Plan
-            </Button>
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <input
+                ref={seatingPlanInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleSeatingPlanUpload}
+                className="hidden"
+              />
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => seatingPlanInputRef.current?.click()}>
+                <Upload className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Upload New Plan</span>
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={handleReset}>
+                <RotateCcw className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Reset Layout</span>
+              </Button>
+              <Button size="sm" className="text-xs sm:text-sm" onClick={handleSave}>
+                <Save className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Save Seating Plan</span>
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="flex gap-4 text-sm">
-          <div className="px-4 py-2 bg-card rounded-lg border border-border">
-            <span className="text-muted-foreground">Total Seats: </span>
+        <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
+          <div className="px-3 sm:px-4 py-2 bg-card rounded-lg border border-border">
+            <span className="text-muted-foreground">Total: </span>
             <span className="font-semibold">{totalSeats}</span>
           </div>
-          <div className="px-4 py-2 bg-success/10 rounded-lg border border-success/20">
+          <div className="px-3 sm:px-4 py-2 bg-success/10 rounded-lg border border-success/20">
             <span className="text-muted-foreground">Assigned: </span>
             <span className="font-semibold text-success">{assignedCount}</span>
           </div>
-          <div className="px-4 py-2 bg-muted rounded-lg border border-border">
+          <div className="px-3 sm:px-4 py-2 bg-muted rounded-lg border border-border">
             <span className="text-muted-foreground">Available: </span>
             <span className="font-semibold">{totalSeats - assignedCount}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Seating Grid */}
-          <div className="lg:col-span-3 bg-card rounded-lg border border-border p-6 shadow-card">
+          <div className="lg:col-span-3 bg-card rounded-lg border border-border p-4 sm:p-6 shadow-card overflow-hidden">
             <div className="mb-4 text-center">
-              <div className="inline-block px-6 py-1 bg-muted rounded text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="inline-block px-4 sm:px-6 py-1 bg-muted rounded text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Front / Stage
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 items-center overflow-x-auto pb-4">
+            <div className="flex flex-col gap-1 sm:gap-2 items-center overflow-x-auto pb-4">
               {selectedHall?.seats.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-2">
-                  <span className="w-6 text-xs text-muted-foreground flex items-center justify-center">
+                <div key={rowIndex} className="flex gap-1 sm:gap-2">
+                  <span className="w-5 sm:w-6 text-xs text-muted-foreground flex items-center justify-center">
                     {String.fromCharCode(65 + rowIndex)}
                   </span>
                   {row.map((seat, colIndex) => (
@@ -452,7 +454,7 @@ export default function AdminSeating() {
                         }
                       }}
                       className={`
-                        w-12 h-12 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all
+                        w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-md sm:rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all
                         ${
                           seat.studentId
                             ? "bg-success/20 border-success hover:bg-success/30"
@@ -464,9 +466,9 @@ export default function AdminSeating() {
                       title={seat.studentId ? `${seat.studentName} (${seat.studentId})` : `Seat ${seat.id} - Click to assign`}
                     >
                       {seat.studentId ? (
-                        <User className="h-4 w-4 text-success" />
+                        <User className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
                       ) : (
-                        <span className="text-xs text-muted-foreground">{seat.id}</span>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">{seat.id}</span>
                       )}
                     </div>
                   ))}
@@ -474,17 +476,17 @@ export default function AdminSeating() {
               ))}
             </div>
 
-            <div className="mt-4 flex justify-center gap-6 text-xs">
+            <div className="mt-4 flex flex-wrap justify-center gap-3 sm:gap-6 text-xs">
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded bg-success/20 border-2 border-success" />
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-success/20 border-2 border-success" />
                 <span className="text-muted-foreground">Assigned</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded bg-muted border-2 border-border" />
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-muted border-2 border-border" />
                 <span className="text-muted-foreground">Available</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded bg-primary/20 border-2 border-primary" />
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded bg-primary/20 border-2 border-primary" />
                 <span className="text-muted-foreground">Selected</span>
               </div>
             </div>
