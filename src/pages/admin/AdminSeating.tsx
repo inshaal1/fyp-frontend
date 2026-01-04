@@ -47,12 +47,69 @@ const createInitialSeating = (rows: number, cols: number): Seat[][] => {
   );
 };
 
+// Demo data - pre-populated seating plan
+const demoHalls: ExamHall[] = [
+  {
+    id: "1",
+    name: "Hall A - Block 1",
+    rows: 5,
+    cols: 10,
+    seats: createInitialSeating(5, 10),
+  },
+  {
+    id: "2",
+    name: "Hall B - Block 1",
+    rows: 5,
+    cols: 8,
+    seats: createInitialSeating(5, 8),
+  },
+  {
+    id: "3",
+    name: "Hall C - Block 2",
+    rows: 6,
+    cols: 12,
+    seats: createInitialSeating(6, 12),
+  },
+];
+
+const demoStudents: Student[] = [
+  { id: "STU2024001", name: "John Smith" },
+  { id: "STU2024002", name: "Emily Davis" },
+  { id: "STU2024003", name: "Michael Brown" },
+  { id: "STU2024004", name: "Sarah Wilson" },
+  { id: "STU2024005", name: "David Lee" },
+  { id: "STU2024006", name: "Jessica Taylor" },
+  { id: "STU2024007", name: "Chris Johnson" },
+  { id: "STU2024008", name: "Amanda White" },
+  { id: "STU2024009", name: "Robert Garcia" },
+  { id: "STU2024010", name: "Lisa Martinez" },
+];
+
+// Pre-map demo students to demo halls
+const createDemoSeatingWithStudents = (): ExamHall[] => {
+  let studentIndex = 0;
+  return demoHalls.map((hall) => {
+    const newSeats = hall.seats.map((row) =>
+      row.map((seat) => {
+        if (studentIndex < demoStudents.length) {
+          const student = demoStudents[studentIndex];
+          studentIndex++;
+          return { ...seat, studentId: student.id, studentName: student.name };
+        }
+        return seat;
+      })
+    );
+    return { ...hall, seats: newSeats };
+  });
+};
+
 export default function AdminSeating() {
-  const [seatingPlanUploaded, setSeatingPlanUploaded] = useState(false);
-  const [studentsUploaded, setStudentsUploaded] = useState(false);
-  const [halls, setHalls] = useState<ExamHall[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [selectedHallId, setSelectedHallId] = useState<string>("");
+  // Start with demo data already loaded
+  const [seatingPlanUploaded, setSeatingPlanUploaded] = useState(true);
+  const [studentsUploaded, setStudentsUploaded] = useState(true);
+  const [halls, setHalls] = useState<ExamHall[]>(createDemoSeatingWithStudents());
+  const [students, setStudents] = useState<Student[]>(demoStudents);
+  const [selectedHallId, setSelectedHallId] = useState<string>("1");
   const [selectedSeat, setSelectedSeat] = useState<{ row: number; col: number } | null>(null);
   const [studentSearch, setStudentSearch] = useState("");
   
@@ -331,6 +388,17 @@ export default function AdminSeating() {
           </div>
 
           <div className="flex gap-3">
+            <input
+              ref={seatingPlanInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleSeatingPlanUpload}
+              className="hidden"
+            />
+            <Button variant="outline" onClick={() => seatingPlanInputRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload New Plan
+            </Button>
             <Button variant="outline" onClick={handleReset}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset Layout
