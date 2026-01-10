@@ -405,7 +405,7 @@ export default function AdminSeating() {
               />
               <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => studentsInputRef.current?.click()}>
                 <FileSpreadsheet className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Auto-Fill from Excel</span>
+                <span className="hidden sm:inline">Upload Student Excel File</span>
               </Button>
               <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => seatingPlanInputRef.current?.click()}>
                 <Upload className="h-4 w-4 sm:mr-2" />
