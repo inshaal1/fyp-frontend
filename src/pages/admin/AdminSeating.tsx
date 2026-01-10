@@ -396,6 +396,17 @@ export default function AdminSeating() {
                 onChange={handleSeatingPlanUpload}
                 className="hidden"
               />
+              <input
+                ref={studentsInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleStudentsUpload}
+                className="hidden"
+              />
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => studentsInputRef.current?.click()}>
+                <FileSpreadsheet className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Auto-Fill from Excel</span>
+              </Button>
               <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => seatingPlanInputRef.current?.click()}>
                 <Upload className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Upload New Plan</span>
