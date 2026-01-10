@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Building2, Users, Camera, AlertTriangle, Monitor } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Building2, Users, Camera, AlertTriangle, Monitor, User } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/ui/stat-card";
 import {
@@ -9,12 +10,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
 
 const mockUser = {
   name: "Dr. Sarah Johnson",
   id: "INV001",
   role: "invigilator" as const,
 };
+
+interface Student {
+  id: string;
+  name: string;
+  rollNumber: string;
+  department: string;
+  email: string;
+}
+
+interface SeatInfo {
+  status: "occupied" | "empty" | "flagged";
+  student?: Student;
+}
 
 interface ExamHall {
   id: string;
@@ -24,8 +45,79 @@ interface ExamHall {
   currentAlerts: number;
   capacity: number;
   cameras: { id: string; name: string; status: "active" | "inactive" }[];
-  seating: ("occupied" | "empty" | "flagged")[][];
+  seating: SeatInfo[][];
 }
+
+const mockStudents: Student[] = [
+  { id: "STU001", name: "John Smith", rollNumber: "2024001", department: "Computer Science", email: "john.smith@university.edu" },
+  { id: "STU002", name: "Emily Davis", rollNumber: "2024002", department: "Electronics", email: "emily.davis@university.edu" },
+  { id: "STU003", name: "Michael Brown", rollNumber: "2024003", department: "Mechanical", email: "michael.brown@university.edu" },
+  { id: "STU004", name: "Sarah Wilson", rollNumber: "2024004", department: "Computer Science", email: "sarah.wilson@university.edu" },
+  { id: "STU005", name: "David Lee", rollNumber: "2024005", department: "Civil", email: "david.lee@university.edu" },
+];
+
+const createSeating = (): SeatInfo[][] => [
+  [
+    { status: "occupied", student: mockStudents[0] },
+    { status: "occupied", student: mockStudents[1] },
+    { status: "flagged", student: mockStudents[2] },
+    { status: "occupied", student: mockStudents[3] },
+    { status: "occupied", student: mockStudents[4] },
+    { status: "empty" },
+    { status: "occupied", student: mockStudents[0] },
+    { status: "occupied", student: mockStudents[1] },
+    { status: "occupied", student: mockStudents[2] },
+    { status: "occupied", student: mockStudents[3] },
+  ],
+  [
+    { status: "occupied", student: mockStudents[1] },
+    { status: "occupied", student: mockStudents[2] },
+    { status: "occupied", student: mockStudents[3] },
+    { status: "occupied", student: mockStudents[4] },
+    { status: "occupied", student: mockStudents[0] },
+    { status: "occupied", student: mockStudents[1] },
+    { status: "occupied", student: mockStudents[2] },
+    { status: "occupied", student: mockStudents[3] },
+    { status: "occupied", student: mockStudents[4] },
+    { status: "occupied", student: mockStudents[0] },
+  ],
+  [
+    { status: "occupied", student: mockStudents[2] },
+    { status: "occupied", student: mockStudents[3] },
+    { status: "occupied", student: mockStudents[4] },
+    { status: "occupied", student: mockStudents[0] },
+    { status: "occupied", student: mockStudents[1] },
+    { status: "occupied", student: mockStudents[2] },
+    { status: "occupied", student: mockStudents[3] },
+    { status: "empty" },
+    { status: "occupied", student: mockStudents[4] },
+    { status: "occupied", student: mockStudents[0] },
+  ],
+  [
+    { status: "occupied", student: mockStudents[3] },
+    { status: "occupied", student: mockStudents[4] },
+    { status: "occupied", student: mockStudents[0] },
+    { status: "flagged", student: mockStudents[1] },
+    { status: "occupied", student: mockStudents[2] },
+    { status: "occupied", student: mockStudents[3] },
+    { status: "occupied", student: mockStudents[4] },
+    { status: "occupied", student: mockStudents[0] },
+    { status: "occupied", student: mockStudents[1] },
+    { status: "occupied", student: mockStudents[2] },
+  ],
+  [
+    { status: "occupied", student: mockStudents[4] },
+    { status: "empty" },
+    { status: "occupied", student: mockStudents[0] },
+    { status: "occupied", student: mockStudents[1] },
+    { status: "occupied", student: mockStudents[2] },
+    { status: "occupied", student: mockStudents[3] },
+    { status: "occupied", student: mockStudents[4] },
+    { status: "flagged", student: mockStudents[0] },
+    { status: "occupied", student: mockStudents[1] },
+    { status: "empty" },
+  ],
+];
 
 const mockExamHalls: ExamHall[] = [
   {
@@ -41,13 +133,7 @@ const mockExamHalls: ExamHall[] = [
       { id: "c3", name: "Camera 03 - Left", status: "active" },
       { id: "c4", name: "Camera 04 - Right", status: "inactive" },
     ],
-    seating: [
-      ["occupied", "occupied", "flagged", "occupied", "occupied", "empty", "occupied", "occupied", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "empty", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "flagged", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied"],
-      ["occupied", "empty", "occupied", "occupied", "occupied", "occupied", "occupied", "flagged", "occupied", "empty"],
-    ],
+    seating: createSeating(),
   },
   {
     id: "2",
@@ -62,11 +148,11 @@ const mockExamHalls: ExamHall[] = [
       { id: "c7", name: "Camera 03 - Center", status: "active" },
     ],
     seating: [
-      ["occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "occupied", "occupied", "empty", "occupied", "occupied"],
-      ["occupied", "flagged", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "occupied", "empty", "occupied", "occupied", "occupied"],
+      [{ status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
+      [{ status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "empty" }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
+      [{ status: "occupied", student: mockStudents[2] }, { status: "flagged", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }],
+      [{ status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }],
+      [{ status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "empty" }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }],
     ],
   },
   {
@@ -84,11 +170,11 @@ const mockExamHalls: ExamHall[] = [
       { id: "c12", name: "Camera 05 - Center", status: "active" },
     ],
     seating: [
-      ["occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "flagged", "occupied", "occupied", "occupied", "occupied", "occupied", "empty", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "occupied", "occupied", "empty", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied"],
-      ["occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "occupied", "flagged", "occupied", "occupied", "occupied"],
-      ["empty", "occupied", "occupied", "occupied", "occupied", "empty", "occupied", "occupied", "occupied", "occupied", "occupied", "empty"],
+      [{ status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }],
+      [{ status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "flagged", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "empty" }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }],
+      [{ status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "empty" }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
+      [{ status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "flagged", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }],
+      [{ status: "empty" }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "empty" }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "empty" }],
     ],
   },
 ];
@@ -100,8 +186,23 @@ const seatColors = {
 };
 
 export default function InvigilatorExamHalls() {
+  const navigate = useNavigate();
   const [selectedHallId, setSelectedHallId] = useState("1");
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const selectedHall = mockExamHalls.find(h => h.id === selectedHallId) || mockExamHalls[0];
+
+  const handleSeatClick = (seat: SeatInfo, seatLabel: string) => {
+    if (seat.status === "empty") {
+      toast({
+        title: "Empty Seat",
+        description: `Seat ${seatLabel} - No student assigned`,
+      });
+    } else if (seat.status === "flagged") {
+      navigate("/invigilator/alerts");
+    } else if (seat.status === "occupied" && seat.student) {
+      setSelectedStudent(seat.student);
+    }
+  };
 
   return (
     <DashboardLayout
@@ -191,13 +292,17 @@ export default function InvigilatorExamHalls() {
                   <span className="w-5 sm:w-6 text-xs text-muted-foreground flex items-center justify-center">
                     {String.fromCharCode(65 + rowIndex)}
                   </span>
-                  {row.map((seat, seatIndex) => (
-                    <div
-                      key={seatIndex}
-                      className={`w-6 h-6 sm:w-8 sm:h-8 rounded border-2 transition-all duration-200 hover:scale-110 cursor-pointer ${seatColors[seat]}`}
-                      title={`Seat ${String.fromCharCode(65 + rowIndex)}${seatIndex + 1} - ${seat}`}
-                    />
-                  ))}
+                  {row.map((seat, seatIndex) => {
+                    const seatLabel = `${String.fromCharCode(65 + rowIndex)}${seatIndex + 1}`;
+                    return (
+                      <div
+                        key={seatIndex}
+                        className={`w-6 h-6 sm:w-8 sm:h-8 rounded border-2 transition-all duration-200 hover:scale-110 cursor-pointer ${seatColors[seat.status]}`}
+                        title={`Seat ${seatLabel} - ${seat.status}${seat.student ? ` (${seat.student.name})` : ''}`}
+                        onClick={() => handleSeatClick(seat, seatLabel)}
+                      />
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -226,6 +331,47 @@ export default function InvigilatorExamHalls() {
             </div>
           </div>
         </div>
+
+        {/* Student Detail Modal */}
+        <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Student Details
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedStudent && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                    <User className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedStudent.name}</h3>
+                    <p className="text-sm text-muted-foreground">{selectedStudent.id}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Roll Number</p>
+                    <p className="font-medium">{selectedStudent.rollNumber}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Department</p>
+                    <p className="font-medium">{selectedStudent.department}</p>
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Email</p>
+                    <p className="font-medium text-sm">{selectedStudent.email}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
