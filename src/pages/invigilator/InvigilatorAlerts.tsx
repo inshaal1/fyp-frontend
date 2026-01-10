@@ -21,7 +21,7 @@ interface Alert {
   id: string;
   studentId: string;
   studentName: string;
-  alertType: "Whisper" | "Head Turn" | "Gesture" | "Phone Detection";
+  alertType: "Whisper" | "Head Turn" | "Gesture";
   time: string;
   examHall: string;
   status: "Pending" | "Reviewed" | "Ignored";
@@ -31,15 +31,13 @@ const mockAlerts: Alert[] = [
   { id: "ALT001", studentId: "STU2024001", studentName: "John Smith", alertType: "Head Turn", time: "10:45 AM", examHall: "Hall A", status: "Pending" },
   { id: "ALT002", studentId: "STU2024015", studentName: "Emily Davis", alertType: "Whisper", time: "10:42 AM", examHall: "Hall A", status: "Pending" },
   { id: "ALT003", studentId: "STU2024023", studentName: "Michael Brown", alertType: "Gesture", time: "10:38 AM", examHall: "Hall B", status: "Reviewed" },
-  { id: "ALT004", studentId: "STU2024008", studentName: "Sarah Wilson", alertType: "Phone Detection", time: "10:35 AM", examHall: "Hall A", status: "Pending" },
-  { id: "ALT005", studentId: "STU2024042", studentName: "David Lee", alertType: "Head Turn", time: "10:30 AM", examHall: "Hall C", status: "Ignored" },
-  { id: "ALT006", studentId: "STU2024019", studentName: "Jessica Taylor", alertType: "Whisper", time: "10:28 AM", examHall: "Hall B", status: "Reviewed" },
-  { id: "ALT007", studentId: "STU2024031", studentName: "Chris Johnson", alertType: "Gesture", time: "10:25 AM", examHall: "Hall A", status: "Pending" },
-  { id: "ALT008", studentId: "STU2024055", studentName: "Amanda White", alertType: "Head Turn", time: "10:22 AM", examHall: "Hall C", status: "Pending" },
+  { id: "ALT004", studentId: "STU2024042", studentName: "David Lee", alertType: "Head Turn", time: "10:30 AM", examHall: "Hall C", status: "Ignored" },
+  { id: "ALT005", studentId: "STU2024019", studentName: "Jessica Taylor", alertType: "Whisper", time: "10:28 AM", examHall: "Hall B", status: "Reviewed" },
+  { id: "ALT006", studentId: "STU2024031", studentName: "Chris Johnson", alertType: "Gesture", time: "10:25 AM", examHall: "Hall A", status: "Pending" },
+  { id: "ALT007", studentId: "STU2024055", studentName: "Amanda White", alertType: "Head Turn", time: "10:22 AM", examHall: "Hall C", status: "Pending" },
 ];
 
 const alertTypeColors: Record<Alert["alertType"], "destructive" | "warning" | "default"> = {
-  "Phone Detection": "destructive",
   "Whisper": "warning",
   "Head Turn": "default",
   "Gesture": "warning",
