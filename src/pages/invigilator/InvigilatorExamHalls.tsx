@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Building2, Users, Camera, AlertTriangle, Monitor, User } from "lucide-react";
+import { Building2, Users, Camera, AlertTriangle, Monitor, User, Clock, MapPin, CheckCircle, XCircle } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/ui/stat-card";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -32,9 +33,17 @@ interface Student {
   email: string;
 }
 
+interface Alert {
+  id: string;
+  alertType: "Whisper" | "Head Turn" | "Gesture";
+  time: string;
+  status: "Pending" | "Reviewed" | "Ignored";
+}
+
 interface SeatInfo {
   status: "occupied" | "empty" | "flagged";
   student?: Student;
+  alert?: Alert;
 }
 
 interface ExamHall {
@@ -60,7 +69,7 @@ const createSeating = (): SeatInfo[][] => [
   [
     { status: "occupied", student: mockStudents[0] },
     { status: "occupied", student: mockStudents[1] },
-    { status: "flagged", student: mockStudents[2] },
+    { status: "flagged", student: mockStudents[2], alert: { id: "ALT001", alertType: "Head Turn", time: "10:45 AM", status: "Pending" } },
     { status: "occupied", student: mockStudents[3] },
     { status: "occupied", student: mockStudents[4] },
     { status: "empty" },
@@ -97,7 +106,7 @@ const createSeating = (): SeatInfo[][] => [
     { status: "occupied", student: mockStudents[3] },
     { status: "occupied", student: mockStudents[4] },
     { status: "occupied", student: mockStudents[0] },
-    { status: "flagged", student: mockStudents[1] },
+    { status: "flagged", student: mockStudents[1], alert: { id: "ALT002", alertType: "Whisper", time: "10:42 AM", status: "Pending" } },
     { status: "occupied", student: mockStudents[2] },
     { status: "occupied", student: mockStudents[3] },
     { status: "occupied", student: mockStudents[4] },
@@ -113,7 +122,7 @@ const createSeating = (): SeatInfo[][] => [
     { status: "occupied", student: mockStudents[2] },
     { status: "occupied", student: mockStudents[3] },
     { status: "occupied", student: mockStudents[4] },
-    { status: "flagged", student: mockStudents[0] },
+    { status: "flagged", student: mockStudents[0], alert: { id: "ALT003", alertType: "Gesture", time: "10:38 AM", status: "Pending" } },
     { status: "occupied", student: mockStudents[1] },
     { status: "empty" },
   ],
@@ -150,7 +159,7 @@ const mockExamHalls: ExamHall[] = [
     seating: [
       [{ status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
       [{ status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "empty" }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
-      [{ status: "occupied", student: mockStudents[2] }, { status: "flagged", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }],
+      [{ status: "occupied", student: mockStudents[2] }, { status: "flagged", student: mockStudents[3], alert: { id: "ALT004", alertType: "Head Turn", time: "10:30 AM", status: "Pending" } }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }],
       [{ status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }],
       [{ status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "empty" }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }],
     ],
@@ -171,9 +180,9 @@ const mockExamHalls: ExamHall[] = [
     ],
     seating: [
       [{ status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }],
-      [{ status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "flagged", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "empty" }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }],
+      [{ status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "flagged", student: mockStudents[4], alert: { id: "ALT005", alertType: "Whisper", time: "10:25 AM", status: "Pending" } }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "empty" }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }],
       [{ status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "empty" }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
-      [{ status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "flagged", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }],
+      [{ status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "flagged", student: mockStudents[1], alert: { id: "ALT006", alertType: "Gesture", time: "10:20 AM", status: "Pending" } }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }],
       [{ status: "empty" }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "empty" }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "empty" }],
     ],
   },
@@ -186,9 +195,9 @@ const seatColors = {
 };
 
 export default function InvigilatorExamHalls() {
-  const navigate = useNavigate();
   const [selectedHallId, setSelectedHallId] = useState("1");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<{ alert: Alert; student: Student; seatLabel: string } | null>(null);
   const selectedHall = mockExamHalls.find(h => h.id === selectedHallId) || mockExamHalls[0];
 
   const handleSeatClick = (seat: SeatInfo, seatLabel: string) => {
@@ -197,11 +206,23 @@ export default function InvigilatorExamHalls() {
         title: "Empty Seat",
         description: `Seat ${seatLabel} - No student assigned`,
       });
-    } else if (seat.status === "flagged") {
-      navigate("/invigilator/alerts");
+    } else if (seat.status === "flagged" && seat.alert && seat.student) {
+      setSelectedAlert({ alert: seat.alert, student: seat.student, seatLabel });
     } else if (seat.status === "occupied" && seat.student) {
       setSelectedStudent(seat.student);
     }
+  };
+
+  const alertTypeColors: Record<Alert["alertType"], "destructive" | "warning" | "default"> = {
+    "Whisper": "warning",
+    "Head Turn": "default",
+    "Gesture": "warning",
+  };
+
+  const statusColors: Record<Alert["status"], "warning" | "success" | "secondary"> = {
+    "Pending": "warning",
+    "Reviewed": "success",
+    "Ignored": "secondary",
   };
 
   return (
@@ -368,6 +389,95 @@ export default function InvigilatorExamHalls() {
                     <p className="font-medium text-sm">{selectedStudent.email}</p>
                   </div>
                 </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Alert Detail Modal */}
+        <Dialog open={!!selectedAlert} onOpenChange={() => setSelectedAlert(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Alert Details
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedAlert && (
+              <div className="space-y-5">
+                {/* Image Placeholder */}
+                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center border border-border">
+                  <div className="text-center text-muted-foreground">
+                    <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Alert snapshot / video</p>
+                  </div>
+                </div>
+
+                {/* Alert Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Alert ID</p>
+                    <p className="font-medium">{selectedAlert.alert.id}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Seat</p>
+                    <p className="font-medium">{selectedAlert.seatLabel}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Student</p>
+                    <p className="font-medium">{selectedAlert.student.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedAlert.student.id}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Alert Type</p>
+                    <StatusBadge variant={alertTypeColors[selectedAlert.alert.alertType]}>
+                      {selectedAlert.alert.alertType}
+                    </StatusBadge>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> Time
+                    </p>
+                    <p className="font-medium">{selectedAlert.alert.time}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> Location
+                    </p>
+                    <p className="font-medium">{selectedHall.name}</p>
+                  </div>
+                </div>
+
+                {/* Alert Description */}
+                <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                  <p className="text-sm text-muted-foreground">
+                    AI detected suspicious activity: <strong>{selectedAlert.alert.alertType.toLowerCase()}</strong> behavior 
+                    observed from student {selectedAlert.student.name} at seat {selectedAlert.seatLabel} at {selectedAlert.alert.time}. 
+                    Please review the footage and take appropriate action.
+                  </p>
+                </div>
+
+                {/* Actions */}
+                {selectedAlert.alert.status === "Pending" && (
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      className="flex-1"
+                      onClick={() => setSelectedAlert(null)}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark as Reviewed
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setSelectedAlert(null)}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Ignore
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>
