@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-
-// Mock credentials for demo
-const MOCK_USERS = {
-  "INV001": { password: "password123", role: "invigilator", name: "Dr. Sarah Johnson" },
-  "ADM001": { password: "admin123", role: "admin", name: "Prof. Michael Chen" },
-};
+import { login } from "@/services/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,22 +18,12 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const user = MOCK_USERS[universityId as keyof typeof MOCK_USERS];
+    const user = await login(universityId, password);
     
-    if (user && user.password === password) {
+    if (user) {
       toast.success(`Welcome back, ${user.name}!`);
-      
-      // Store user info in sessionStorage for demo
-      sessionStorage.setItem("user", JSON.stringify({
-        id: universityId,
-        name: user.name,
-        role: user.role,
-      }));
+      sessionStorage.setItem("user", JSON.stringify(user));
 
-      // Navigate based on role
       if (user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
@@ -74,7 +59,6 @@ export default function Login() {
               Advanced AI-powered examination monitoring system designed for universities. 
               Ensuring academic integrity with real-time surveillance and instant alerts.
             </p>
-            
           </div>
         </div>
       </div>
@@ -82,7 +66,6 @@ export default function Login() {
       {/* Right Panel - Login Form */}
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="w-full max-w-md animate-fade-in">
-          {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
               <Eye className="h-6 w-6 text-primary-foreground" />
@@ -97,9 +80,7 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="universityId" className="text-sm font-medium">
-                University ID
-              </Label>
+              <Label htmlFor="universityId" className="text-sm font-medium">University ID</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
@@ -115,9 +96,7 @@ export default function Login() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                Password
-              </Label>
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
@@ -139,11 +118,7 @@ export default function Login() {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-12 text-base font-medium"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full h-12 text-base font-medium" disabled={isLoading}>
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
@@ -154,7 +129,6 @@ export default function Login() {
               )}
             </Button>
           </form>
-
         </div>
       </div>
     </div>
