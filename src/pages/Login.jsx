@@ -22,7 +22,7 @@ export default function Login() {
     
     if (user) {
       toast.success(`Welcome back, ${user.name}!`);
-      sessionStorage.setItem("user", JSON.stringify(user));
+      // Token + user are persisted to sessionStorage by login()
 
       if (user.role === "admin") {
         navigate("/admin/dashboard");
