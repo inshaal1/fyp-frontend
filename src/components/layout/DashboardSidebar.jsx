@@ -11,23 +11,39 @@ import {
   Grid3X3,
   Eye,
   Menu,
+  BookOpen,
+  Camera,
+  Volume2,
+  Mic,
+  Bell,
+  ShieldAlert,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { logout as apiLogout } from "@/services/api";
 
 const invigilatorNavItems = [
-  { to: "/invigilator/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/invigilator/alerts", icon: AlertTriangle, label: "Alerts" },
-  { to: "/invigilator/exam-halls", icon: Building2, label: "Exam Hall Details" },
-  { to: "/invigilator/students", icon: Users, label: "Student List" },
+  { to: "/invigilator/dashboard",   icon: LayoutDashboard, label: "Overview" },
+  { to: "/invigilator/alerts",      icon: Bell,            label: "Alerts" },
+  { to: "/invigilator/violations",  icon: ShieldAlert,     label: "Violations" },
+  { to: "/invigilator/exam-halls",  icon: Building2,       label: "Exam Hall Details" },
+  { to: "/invigilator/students",    icon: Users,           label: "Student List" },
+  { to: "/invigilator/live-alerts", icon: AlertTriangle,   label: "Live Alerts" },
 ];
 
 const adminNavItems = [
-  { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/admin/seating", icon: Grid3X3, label: "Manage Seating Plan" },
-  { to: "/admin/exam-halls", icon: Building2, label: "Exam Halls" },
-  { to: "/admin/reports", icon: FileText, label: "Reports" },
+  { to: "/admin/dashboard",    icon: LayoutDashboard, label: "Overview" },
+  { to: "/admin/invigilators", icon: Users,           label: "Invigilators" },
+  { to: "/admin/halls",        icon: Building2,       label: "Exam Halls" },
+  { to: "/admin/exams",        icon: BookOpen,        label: "Exams" },
+  { to: "/admin/cameras",      icon: Camera,          label: "Cameras" },
+  { to: "/admin/speakers",     icon: Volume2,         label: "Speakers" },
+  { to: "/admin/microphones",  icon: Mic,             label: "Microphones" },
+  { to: "/admin/violations",   icon: ShieldAlert,     label: "Violations" },
+  { to: "/admin/alerts",       icon: Bell,            label: "Alerts" },
+  { to: "/admin/seating",      icon: Grid3X3,         label: "Seating Plan" },
+  { to: "/admin/reports",      icon: FileText,        label: "Reports" },
 ];
 
 function SidebarContent({ userRole, userName, userId, onNavigate }) {
@@ -35,8 +51,7 @@ function SidebarContent({ userRole, userName, userId, onNavigate }) {
   const navItems = userRole === "admin" ? adminNavItems : invigilatorNavItems;
 
   const handleLogout = () => {
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
+    apiLogout();
     onNavigate?.();
     navigate("/");
   };
