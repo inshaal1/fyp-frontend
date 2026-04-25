@@ -57,36 +57,26 @@ async function httpRequest(path, { method = "GET", body, headers = {}, isForm = 
 const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ============================================================
-// Auth — REAL  (POST /api/auth/login)
+// Auth — DEMO MOCK (swap to real /api/auth/login later)
 // ============================================================
 
+const DEMO_USERS = [
+  { universityId: "ADM001", password: "admin123",    id: "u-adm-001", name: "Admin User",       role: "admin" },
+  { universityId: "INV001", password: "password123", id: "u-inv-001", name: "Invigilator User", role: "invigilator" },
+];
+
 export async function login(universityId, password) {
-  try {
-    const data = await httpRequest("/auth/login", {
-      method: "POST",
-      body: { universityId, password },
-    });
-
-    // Backend is expected to return { token, user: { id, name, role, ... } }
-    const token = data?.token;
-    const user = data?.user || data;
-
-    if (!token || !user) {
-      return { error: "Unexpected response from server." };
-    }
-
-    sessionStorage.setItem(TOKEN_KEY, token);
-    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-    return { user };
-  } catch (err) {
-    console.error("login failed:", err);
-    const isNetwork = err instanceof TypeError && /fetch/i.test(err.message);
-    return {
-      error: isNetwork
-        ? `Cannot reach backend at ${API_BASE_URL}. Make sure your server is running and reachable from this browser (set VITE_API_BASE_URL to a public URL if the frontend is hosted).`
-        : err.message || "Login failed.",
-    };
+  await delay(400);
+  const match = DEMO_USERS.find(
+    (u) => u.universityId.toUpperCase() === String(universityId).toUpperCase() && u.password === password
+  );
+  if (!match) {
+    return { error: "Invalid credentials. Try ADM001/admin123 or INV001/password123" };
   }
+  const { password: _pw, ...user } = match;
+  sessionStorage.setItem(TOKEN_KEY, `demo-token-${user.id}`);
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+  return { user };
 }
 
 export function logout() {
