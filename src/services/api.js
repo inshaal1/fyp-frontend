@@ -1,59 +1,290 @@
-// Mock API service layer
-// Replace these functions with real API calls when ready
-// Each function simulates an async API call with a small delay
+// ============================================================
+// API service layer
+//
+// Real backend endpoints are called via httpRequest() against
+// API_BASE_URL. Endpoints not yet built on the backend
+// (dashboards, students, seat allocations, reports) still
+// return mock data and are clearly marked as TODO.
+//
+// To switch environments, set VITE_API_BASE_URL in your env.
+// ============================================================
 
-// Simulate network delay
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
+
+// ---- HTTP helper ------------------------------------------------
+
+async function httpRequest(path, { method = "GET", body, headers = {}, isForm = false } = {}) {
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  const finalHeaders = { ...headers };
+
+  if (!isForm && body !== undefined) {
+    finalHeaders["Content-Type"] = "application/json";
+  }
+  if (token) {
+    finalHeaders["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: finalHeaders,
+    body: isForm ? body : body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  let data = null;
+  const text = await res.text();
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+  }
+
+  if (!res.ok) {
+    const message =
+      (data && (data.message || data.error)) || `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+// Mock latency for endpoints not yet implemented on the backend
 const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ============================================================
-// Auth / User
+// Auth — REAL  (POST /api/auth/login)
 // ============================================================
 
-const MOCK_USERS = {
-  INV001: { password: "password123", role: "invigilator", name: "Dr. Sarah Johnson" },
-  ADM001: { password: "admin123", role: "admin", name: "Prof. Michael Chen" },
-};
-
 export async function login(universityId, password) {
-  await delay(800);
-  const user = MOCK_USERS[universityId];
-  if (user && user.password === password) {
-    return { id: universityId, name: user.name, role: user.role };
+  try {
+    const data = await httpRequest("/auth/login", {
+      method: "POST",
+      body: { universityId, password },
+    });
+
+    // Backend is expected to return { token, user: { id, name, role, ... } }
+    // Adapt here if your shape differs.
+    const token = data?.token;
+    const user = data?.user || data;
+
+    if (!token || !user) return null;
+
+    sessionStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    return user;
+  } catch (err) {
+    console.error("login failed:", err);
+    return null;
   }
-  return null;
+}
+
+export function logout() {
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
 }
 
 export function getCurrentUser() {
-  const stored = sessionStorage.getItem("user");
+  const stored = sessionStorage.getItem(USER_KEY);
   return stored ? JSON.parse(stored) : null;
 }
 
+export function getToken() {
+  return sessionStorage.getItem(TOKEN_KEY);
+}
+
 // ============================================================
-// Invigilator – Dashboard
+// Exam Halls — REAL  (/api/examhalls)
 // ============================================================
 
-export async function getInvigilatorDashboardStats() {
-  await delay();
-  return { totalStudents: 248, activeAlerts: 12, examHalls: 6 };
+export async function getExamHalls() {
+  // Used by invigilator exam halls page — backend returns hall list
+  const data = await httpRequest("/examhalls");
+  return Array.isArray(data) ? data : data?.data || [];
+}
+
+export async function getAdminExamHalls() {
+  const data = await httpRequest("/examhalls");
+  return Array.isArray(data) ? data : data?.data || [];
+}
+
+export async function getExamHallById(id) {
+  return httpRequest(`/examhalls/${id}`);
+}
+
+export async function createAdminExamHall(hall) {
+  return httpRequest("/examhalls", { method: "POST", body: hall });
+}
+
+export async function updateAdminExamHallStatus(id, status) {
+  return httpRequest(`/examhalls/${id}/status`, {
+    method: "PATCH",
+    body: { status },
+  });
+}
+
+export async function deleteAdminExamHall(id) {
+  return httpRequest(`/examhalls/${id}`, { method: "DELETE" });
+}
+
+export async function uploadExamHallsCsv(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  return httpRequest("/examhalls/upload/csv", {
+    method: "POST",
+    body: fd,
+    isForm: true,
+  });
+}
+
+// Backwards-compat alias used by older components
+export async function updateAdminExamHall(id, data) {
+  if (data?.status) return updateAdminExamHallStatus(id, data.status);
+  // No general PUT in backend yet for halls — surface a clear error
+  throw new Error("Only status updates are supported by the backend right now.");
+}
+
+// ============================================================
+// Alerts — REAL  (/api/alerts)
+// ============================================================
+
+export async function getAlerts() {
+  const data = await httpRequest("/alerts");
+  return Array.isArray(data) ? data : data?.data || [];
+}
+
+export async function getAlertById(id) {
+  return httpRequest(`/alerts/${id}`);
+}
+
+export async function createAlert(payload) {
+  return httpRequest("/alerts", { method: "POST", body: payload });
+}
+
+export async function updateAlertStatus(alertId, status) {
+  return httpRequest(`/alerts/${alertId}/status`, {
+    method: "PATCH",
+    body: { status },
+  });
+}
+
+export async function deleteAlert(id) {
+  return httpRequest(`/alerts/${id}`, { method: "DELETE" });
+}
+
+// ============================================================
+// Invigilators — REAL (admin only) (/api/invigilators)
+// ============================================================
+
+export async function getInvigilators() {
+  const data = await httpRequest("/invigilators");
+  return Array.isArray(data) ? data : data?.data || [];
+}
+export async function getInvigilatorById(id) { return httpRequest(`/invigilators/${id}`); }
+export async function createInvigilator(payload) { return httpRequest("/invigilators", { method: "POST", body: payload }); }
+export async function updateInvigilator(id, payload) { return httpRequest(`/invigilators/${id}`, { method: "PUT", body: payload }); }
+export async function deleteInvigilator(id) { return httpRequest(`/invigilators/${id}`, { method: "DELETE" }); }
+export async function uploadInvigilatorsCsv(file) {
+  const fd = new FormData(); fd.append("file", file);
+  return httpRequest("/invigilators/upload/csv", { method: "POST", body: fd, isForm: true });
+}
+
+// ============================================================
+// Exams — REAL (/api/exams)
+// ============================================================
+
+export async function getExams() {
+  const data = await httpRequest("/exams");
+  return Array.isArray(data) ? data : data?.data || [];
+}
+export async function getExamById(id) { return httpRequest(`/exams/${id}`); }
+export async function createExam(payload) { return httpRequest("/exams", { method: "POST", body: payload }); }
+export async function updateExam(id, payload) { return httpRequest(`/exams/${id}`, { method: "PUT", body: payload }); }
+export async function deleteExam(id) { return httpRequest(`/exams/${id}`, { method: "DELETE" }); }
+export async function uploadExamsCsv(file) {
+  const fd = new FormData(); fd.append("file", file);
+  return httpRequest("/exams/upload/csv", { method: "POST", body: fd, isForm: true });
+}
+export async function refreshExamStatuses() { return httpRequest("/exams/status/update"); }
+
+// ============================================================
+// Cameras / Speakers / Microphones — REAL
+// ============================================================
+
+const deviceApi = (resource) => ({
+  list: async () => {
+    const data = await httpRequest(`/${resource}`);
+    return Array.isArray(data) ? data : data?.data || [];
+  },
+  get: (id) => httpRequest(`/${resource}/${id}`),
+  create: (payload) => httpRequest(`/${resource}`, { method: "POST", body: payload }),
+  update: (id, payload) => httpRequest(`/${resource}/${id}`, { method: "PUT", body: payload }),
+  setStatus: (id, status) =>
+    httpRequest(`/${resource}/${id}/status`, { method: "PATCH", body: { status } }),
+  remove: (id) => httpRequest(`/${resource}/${id}`, { method: "DELETE" }),
+  uploadCsv: (file) => {
+    const fd = new FormData(); fd.append("file", file);
+    return httpRequest(`/${resource}/upload/csv`, { method: "POST", body: fd, isForm: true });
+  },
+});
+
+export const cameras = deviceApi("cameras");
+export const speakers = deviceApi("speakers");
+export const microphones = deviceApi("microphones");
+
+// ============================================================
+// Violations — REAL (/api/violations)
+// ============================================================
+
+export async function getViolations() {
+  const data = await httpRequest("/violations");
+  return Array.isArray(data) ? data : data?.data || [];
+}
+export async function getViolationById(id) { return httpRequest(`/violations/${id}`); }
+export async function createViolation(payload) { return httpRequest("/violations", { method: "POST", body: payload }); }
+export async function updateViolationStatus(id, status) {
+  return httpRequest(`/violations/${id}/status`, { method: "PATCH", body: { status } });
+}
+export async function deleteViolation(id) { return httpRequest(`/violations/${id}`, { method: "DELETE" }); }
+
+// ============================================================
+// Camera options helper (for invigilator dashboard dropdowns)
+// Derives from real /api/cameras
+// ============================================================
+
+export async function getCameraOptions() {
+  try {
+    const list = await cameras.list();
+    return list.map((c) => ({ id: c.id || c._id, name: c.name || c.label || `Camera ${c.id}` }));
+  } catch (err) {
+    console.error("getCameraOptions failed, returning empty list:", err);
+    return [];
+  }
 }
 
 export async function getExamHallOptions() {
-  await delay();
-  return [
-    { id: "1", name: "Hall A - Block 1" },
-    { id: "2", name: "Hall B - Block 1" },
-    { id: "3", name: "Hall C - Block 2" },
-  ];
+  try {
+    const list = await getExamHalls();
+    return list.map((h) => ({ id: h.id || h._id, name: h.name }));
+  } catch (err) {
+    console.error("getExamHallOptions failed, returning empty list:", err);
+    return [];
+  }
 }
 
-export async function getCameraOptions() {
+// ============================================================
+// MOCK ENDPOINTS — backend not yet implemented
+// TODO: replace with real calls when these routes ship
+// ============================================================
+
+// ---- Invigilator Dashboard (TODO: GET /api/dashboard/invigilator)
+export async function getInvigilatorDashboardStats() {
   await delay();
-  return [
-    { id: "1", name: "Camera 01 - Front" },
-    { id: "2", name: "Camera 02 - Back" },
-    { id: "3", name: "Camera 03 - Side Left" },
-    { id: "4", name: "Camera 04 - Side Right" },
-  ];
+  return { totalStudents: 248, activeAlerts: 12, examHalls: 6 };
 }
 
 export async function getCurrentSession() {
@@ -66,35 +297,7 @@ export async function getCurrentSession() {
   };
 }
 
-// ============================================================
-// Invigilator – Alerts
-// ============================================================
-
-const mockAlerts = [
-  { id: "ALT001", studentId: "STU2024001", studentName: "John Smith", alertType: "Head Turn", time: "10:45 AM", examHall: "Hall A", status: "Pending" },
-  { id: "ALT002", studentId: "STU2024015", studentName: "Emily Davis", alertType: "Whisper", time: "10:42 AM", examHall: "Hall A", status: "Pending" },
-  { id: "ALT003", studentId: "STU2024023", studentName: "Michael Brown", alertType: "Gesture", time: "10:38 AM", examHall: "Hall B", status: "Reviewed" },
-  { id: "ALT004", studentId: "STU2024042", studentName: "David Lee", alertType: "Head Turn", time: "10:30 AM", examHall: "Hall C", status: "Ignored" },
-  { id: "ALT005", studentId: "STU2024019", studentName: "Jessica Taylor", alertType: "Whisper", time: "10:28 AM", examHall: "Hall B", status: "Reviewed" },
-  { id: "ALT006", studentId: "STU2024031", studentName: "Chris Johnson", alertType: "Gesture", time: "10:25 AM", examHall: "Hall A", status: "Pending" },
-  { id: "ALT007", studentId: "STU2024055", studentName: "Amanda White", alertType: "Head Turn", time: "10:22 AM", examHall: "Hall C", status: "Pending" },
-];
-
-export async function getAlerts() {
-  await delay();
-  return [...mockAlerts];
-}
-
-export async function updateAlertStatus(alertId, newStatus) {
-  await delay();
-  const alert = mockAlerts.find((a) => a.id === alertId);
-  if (alert) alert.status = newStatus;
-}
-
-// ============================================================
-// Invigilator – Students
-// ============================================================
-
+// ---- Students (TODO: GET /api/students)
 const mockStudentList = [
   { id: "1", studentId: "STU2024001", name: "John Smith", seatNumber: "A-01", examHall: "Hall A", status: "Flagged", alertCount: 2, email: "john.smith@university.edu", department: "Computer Science" },
   { id: "2", studentId: "STU2024002", name: "Emily Davis", seatNumber: "A-02", examHall: "Hall A", status: "Normal", alertCount: 0, email: "emily.davis@university.edu", department: "Mathematics" },
@@ -113,150 +316,7 @@ export async function getStudentList() {
   return [...mockStudentList];
 }
 
-// ============================================================
-// Invigilator – Exam Halls
-// ============================================================
-
-const mockStudents = [
-  { id: "STU001", name: "John Smith", rollNumber: "2024001", department: "Computer Science", email: "john.smith@university.edu" },
-  { id: "STU002", name: "Emily Davis", rollNumber: "2024002", department: "Electronics", email: "emily.davis@university.edu" },
-  { id: "STU003", name: "Michael Brown", rollNumber: "2024003", department: "Mechanical", email: "michael.brown@university.edu" },
-  { id: "STU004", name: "Sarah Wilson", rollNumber: "2024004", department: "Computer Science", email: "sarah.wilson@university.edu" },
-  { id: "STU005", name: "David Lee", rollNumber: "2024005", department: "Civil", email: "david.lee@university.edu" },
-];
-
-const createSeating = () => [
-  [
-    { status: "occupied", student: mockStudents[0] },
-    { status: "occupied", student: mockStudents[1] },
-    { status: "flagged", student: mockStudents[2], alert: { id: "ALT001", alertType: "Head Turn", time: "10:45 AM", status: "Pending" } },
-    { status: "occupied", student: mockStudents[3] },
-    { status: "occupied", student: mockStudents[4] },
-    { status: "empty" },
-    { status: "occupied", student: mockStudents[0] },
-    { status: "occupied", student: mockStudents[1] },
-    { status: "occupied", student: mockStudents[2] },
-    { status: "occupied", student: mockStudents[3] },
-  ],
-  [
-    { status: "occupied", student: mockStudents[1] },
-    { status: "occupied", student: mockStudents[2] },
-    { status: "occupied", student: mockStudents[3] },
-    { status: "occupied", student: mockStudents[4] },
-    { status: "occupied", student: mockStudents[0] },
-    { status: "occupied", student: mockStudents[1] },
-    { status: "occupied", student: mockStudents[2] },
-    { status: "occupied", student: mockStudents[3] },
-    { status: "occupied", student: mockStudents[4] },
-    { status: "occupied", student: mockStudents[0] },
-  ],
-  [
-    { status: "occupied", student: mockStudents[2] },
-    { status: "occupied", student: mockStudents[3] },
-    { status: "occupied", student: mockStudents[4] },
-    { status: "occupied", student: mockStudents[0] },
-    { status: "occupied", student: mockStudents[1] },
-    { status: "occupied", student: mockStudents[2] },
-    { status: "occupied", student: mockStudents[3] },
-    { status: "empty" },
-    { status: "occupied", student: mockStudents[4] },
-    { status: "occupied", student: mockStudents[0] },
-  ],
-  [
-    { status: "occupied", student: mockStudents[3] },
-    { status: "occupied", student: mockStudents[4] },
-    { status: "occupied", student: mockStudents[0] },
-    { status: "flagged", student: mockStudents[1], alert: { id: "ALT002", alertType: "Whisper", time: "10:42 AM", status: "Pending" } },
-    { status: "occupied", student: mockStudents[2] },
-    { status: "occupied", student: mockStudents[3] },
-    { status: "occupied", student: mockStudents[4] },
-    { status: "occupied", student: mockStudents[0] },
-    { status: "occupied", student: mockStudents[1] },
-    { status: "occupied", student: mockStudents[2] },
-  ],
-  [
-    { status: "occupied", student: mockStudents[4] },
-    { status: "empty" },
-    { status: "occupied", student: mockStudents[0] },
-    { status: "occupied", student: mockStudents[1] },
-    { status: "occupied", student: mockStudents[2] },
-    { status: "occupied", student: mockStudents[3] },
-    { status: "occupied", student: mockStudents[4] },
-    { status: "flagged", student: mockStudents[0], alert: { id: "ALT003", alertType: "Gesture", time: "10:38 AM", status: "Pending" } },
-    { status: "occupied", student: mockStudents[1] },
-    { status: "empty" },
-  ],
-];
-
-const mockExamHalls = [
-  {
-    id: "1",
-    name: "Hall A - Block 1",
-    totalStudents: 45,
-    activeCameras: 4,
-    currentAlerts: 3,
-    capacity: 50,
-    cameras: [
-      { id: "c1", name: "Camera 01 - Front", status: "active" },
-      { id: "c2", name: "Camera 02 - Back", status: "active" },
-      { id: "c3", name: "Camera 03 - Left", status: "active" },
-      { id: "c4", name: "Camera 04 - Right", status: "inactive" },
-    ],
-    seating: createSeating(),
-  },
-  {
-    id: "2",
-    name: "Hall B - Block 1",
-    totalStudents: 38,
-    activeCameras: 3,
-    currentAlerts: 1,
-    capacity: 40,
-    cameras: [
-      { id: "c5", name: "Camera 01 - Front", status: "active" },
-      { id: "c6", name: "Camera 02 - Back", status: "active" },
-      { id: "c7", name: "Camera 03 - Center", status: "active" },
-    ],
-    seating: [
-      [{ status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
-      [{ status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "empty" }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
-      [{ status: "occupied", student: mockStudents[2] }, { status: "flagged", student: mockStudents[3], alert: { id: "ALT004", alertType: "Head Turn", time: "10:30 AM", status: "Pending" } }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }],
-      [{ status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }],
-      [{ status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "empty" }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }],
-    ],
-  },
-  {
-    id: "3",
-    name: "Hall C - Block 2",
-    totalStudents: 52,
-    activeCameras: 5,
-    currentAlerts: 2,
-    capacity: 60,
-    cameras: [
-      { id: "c8", name: "Camera 01 - Front Left", status: "active" },
-      { id: "c9", name: "Camera 02 - Front Right", status: "active" },
-      { id: "c10", name: "Camera 03 - Back Left", status: "active" },
-      { id: "c11", name: "Camera 04 - Back Right", status: "active" },
-      { id: "c12", name: "Camera 05 - Center", status: "active" },
-    ],
-    seating: [
-      [{ status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }],
-      [{ status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "flagged", student: mockStudents[4], alert: { id: "ALT005", alertType: "Whisper", time: "10:25 AM", status: "Pending" } }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "empty" }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }],
-      [{ status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "empty" }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }],
-      [{ status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "flagged", student: mockStudents[1], alert: { id: "ALT006", alertType: "Gesture", time: "10:20 AM", status: "Pending" } }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "occupied", student: mockStudents[4] }],
-      [{ status: "empty" }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "empty" }, { status: "occupied", student: mockStudents[4] }, { status: "occupied", student: mockStudents[0] }, { status: "occupied", student: mockStudents[1] }, { status: "occupied", student: mockStudents[2] }, { status: "occupied", student: mockStudents[3] }, { status: "empty" }],
-    ],
-  },
-];
-
-export async function getExamHalls() {
-  await delay();
-  return [...mockExamHalls];
-}
-
-// ============================================================
-// Admin – Dashboard
-// ============================================================
-
+// ---- Admin Dashboard (TODO: GET /api/dashboard/admin)
 export async function getAdminDashboardStats() {
   await delay();
   return { totalExamHalls: 8, totalStudents: 486, totalAlertsLogged: 127, examsThisWeek: 12 };
@@ -278,56 +338,15 @@ export async function getSystemOverview() {
   return { uptime: "98.5%", activeCameras: 32, pendingIssues: 2, avgResponseTime: "1.2s" };
 }
 
-// ============================================================
-// Admin – Exam Halls
-// ============================================================
-
-const adminExamHalls = [
-  { id: "1", name: "Hall A", capacity: 50, cameras: 4, status: "Active", block: "Block 1" },
-  { id: "2", name: "Hall B", capacity: 40, cameras: 3, status: "Active", block: "Block 1" },
-  { id: "3", name: "Hall C", capacity: 60, cameras: 5, status: "Active", block: "Block 2" },
-  { id: "4", name: "Hall D", capacity: 35, cameras: 3, status: "Maintenance", block: "Block 2" },
-  { id: "5", name: "Hall E", capacity: 45, cameras: 4, status: "Active", block: "Block 3" },
-  { id: "6", name: "Hall F", capacity: 55, cameras: 4, status: "Inactive", block: "Block 3" },
-];
-
-export async function getAdminExamHalls() {
-  await delay();
-  return [...adminExamHalls];
-}
-
-export async function createAdminExamHall(hall) {
-  await delay();
-  const newHall = { ...hall, id: Date.now().toString() };
-  adminExamHalls.push(newHall);
-  return newHall;
-}
-
-export async function updateAdminExamHall(id, data) {
-  await delay();
-  const index = adminExamHalls.findIndex((h) => h.id === id);
-  if (index !== -1) Object.assign(adminExamHalls[index], data);
-}
-
-export async function deleteAdminExamHall(id) {
-  await delay();
-  const index = adminExamHalls.findIndex((h) => h.id === id);
-  if (index !== -1) adminExamHalls.splice(index, 1);
-}
-
-// ============================================================
-// Admin – Seating
-// ============================================================
-
-const createInitialSeating = (rows, cols) => {
-  return Array.from({ length: rows }, (_, rowIndex) =>
+// ---- Seat allocations (TODO: GET/POST /api/seat-allocations)
+const createInitialSeating = (rows, cols) =>
+  Array.from({ length: rows }, (_, rowIndex) =>
     Array.from({ length: cols }, (_, colIndex) => ({
       id: `${String.fromCharCode(65 + rowIndex)}${colIndex + 1}`,
       studentId: null,
       studentName: null,
     }))
   );
-};
 
 const seatingStudents = [
   { id: "STU2024001", name: "John Smith" },
@@ -348,7 +367,6 @@ const seatingHalls = [
   { id: "3", name: "Hall C - Block 2", rows: 6, cols: 12, seats: createInitialSeating(6, 12) },
 ];
 
-// Pre-populate seats with students
 (() => {
   let idx = 0;
   for (const hall of seatingHalls) {
@@ -374,9 +392,8 @@ export async function getSeatingStudents() {
   return [...seatingStudents];
 }
 
-export async function saveSeatingPlan(halls) {
+export async function saveSeatingPlan(_halls) {
   await delay();
-  // In real API, persist to database
 }
 
 export async function uploadSeatingPlan(_file) {
@@ -389,10 +406,7 @@ export async function uploadStudentsList(_file) {
   return [...seatingStudents];
 }
 
-// ============================================================
-// Admin – Reports
-// ============================================================
-
+// ---- Reports (TODO: GET /api/reports)
 const mockReports = [
   { id: "RPT001", date: "2024-01-15", examHall: "Hall A", examName: "CS201 Midterm", totalAlerts: 12, reviewedAlerts: 12, studentsMonitored: 45, duration: "2h 30m" },
   { id: "RPT002", date: "2024-01-15", examHall: "Hall B", examName: "MATH101 Quiz", totalAlerts: 5, reviewedAlerts: 5, studentsMonitored: 38, duration: "1h 00m" },
@@ -410,5 +424,4 @@ export async function getReports() {
 
 export async function exportReport(_format) {
   await delay();
-  // In real API, trigger file download
 }
