@@ -18,19 +18,18 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    const user = await login(universityId, password);
-    
-    if (user) {
-      toast.success(`Welcome back, ${user.name}!`);
-      // Token + user are persisted to sessionStorage by login()
+    const result = await login(universityId, password);
 
+    if (result?.user) {
+      const user = result.user;
+      toast.success(`Welcome back, ${user.name}!`);
       if (user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/invigilator/dashboard");
       }
     } else {
-      toast.error("Invalid credentials. Try INV001/password123 or ADM001/admin123");
+      toast.error(result?.error || "Login failed.");
     }
 
     setIsLoading(false);

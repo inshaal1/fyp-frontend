@@ -68,18 +68,24 @@ export async function login(universityId, password) {
     });
 
     // Backend is expected to return { token, user: { id, name, role, ... } }
-    // Adapt here if your shape differs.
     const token = data?.token;
     const user = data?.user || data;
 
-    if (!token || !user) return null;
+    if (!token || !user) {
+      return { error: "Unexpected response from server." };
+    }
 
     sessionStorage.setItem(TOKEN_KEY, token);
     sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-    return user;
+    return { user };
   } catch (err) {
     console.error("login failed:", err);
-    return null;
+    const isNetwork = err instanceof TypeError && /fetch/i.test(err.message);
+    return {
+      error: isNetwork
+        ? `Cannot reach backend at ${API_BASE_URL}. Make sure your server is running and reachable from this browser (set VITE_API_BASE_URL to a public URL if the frontend is hosted).`
+        : err.message || "Login failed.",
+    };
   }
 }
 
