@@ -51,8 +51,7 @@ function SidebarContent({ userRole, userName, userId, onNavigate }) {
   const navItems = userRole === "admin" ? adminNavItems : invigilatorNavItems;
 
   const handleLogout = () => {
-    sessionStorage.removeItem("token");
-    sessionStorage.removeItem("user");
+    apiLogout();
     onNavigate?.();
     navigate("/");
   };
