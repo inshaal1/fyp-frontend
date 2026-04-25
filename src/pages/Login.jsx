@@ -18,7 +18,7 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    const result = await login(universityId, password);
+    const result = await login(email, password);
 
     if (result?.user) {
       const user = result.user;
