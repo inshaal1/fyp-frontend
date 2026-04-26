@@ -376,3 +376,52 @@ const mockReports = [
 ];
 export async function getReports() { await delay(); return [...mockReports]; }
 export async function exportReport() { await delay(); }
+
+// ----- Invigilator Hall Details (legacy rich data) -----
+function buildSeating(rows, cols, flagged = []) {
+  const grid = [];
+  let studentIdx = 0;
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < cols; c++) {
+      const isFlagged = flagged.some(f => f.r === r && f.c === c);
+      const studentSrc = mockStudentList[studentIdx % mockStudentList.length];
+      const student = {
+        id: studentSrc.studentId,
+        name: studentSrc.name,
+        rollNumber: studentSrc.studentId,
+        department: studentSrc.department,
+        email: studentSrc.email,
+      };
+      const seat = isFlagged
+        ? { status: "flagged", student, alert: { id: `ALT-${r}${c}`, alertType: "Whisper", time: "10:24 AM", status: "Pending" } }
+        : (Math.random() > 0.15 ? { status: "occupied", student } : { status: "empty" });
+      row.push(seat);
+      studentIdx++;
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+const invigilatorHallsRich = [
+  {
+    id: "1", name: "Hall A - Block 1", capacity: 50, totalStudents: 45, activeCameras: 4, currentAlerts: 2,
+    seating: buildSeating(5, 10, [{ r: 0, c: 3 }, { r: 2, c: 5 }]),
+    cameras: [
+      { id: "c1", name: "Camera 1 - Front Left",  status: "active" },
+      { id: "c2", name: "Camera 2 - Front Right", status: "active" },
+      { id: "c3", name: "Camera 3 - Back Left",   status: "active" },
+      { id: "c4", name: "Camera 4 - Back Right",  status: "inactive" },
+    ],
+  },
+  {
+    id: "2", name: "Hall B - Block 1", capacity: 40, totalStudents: 38, activeCameras: 3, currentAlerts: 1,
+    seating: buildSeating(5, 8, [{ r: 1, c: 2 }]),
+    cameras: [
+      { id: "c5", name: "Camera 1 - Front", status: "active" },
+      { id: "c6", name: "Camera 2 - Mid",   status: "active" },
+      { id: "c7", name: "Camera 3 - Back",  status: "active" },
+    ],
+  },
+];
+export async function getInvigilatorHallDetails() { await delay(); return clone(invigilatorHallsRich); }
