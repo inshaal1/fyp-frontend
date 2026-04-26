@@ -24,7 +24,7 @@ export default function InvigilatorExamHalls() {
   const [selectedAlert, setSelectedAlert] = useState(null);
 
   useEffect(() => {
-    api.getExamHalls().then((halls) => { setExamHalls(halls); if (halls.length > 0) setSelectedHallId(halls[0].id); });
+    api.getInvigilatorHallDetails().then((halls) => { setExamHalls(halls); if (halls.length > 0) setSelectedHallId(halls[0].id); });
   }, []);
 
   const selectedHall = examHalls.find(h => h.id === selectedHallId) || examHalls[0];
