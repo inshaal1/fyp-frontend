@@ -81,8 +81,8 @@ function SidebarContent({ userRole, userName, userId, onNavigate }) {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{userName}</p>
-            <p className="text-xs text-sidebar-foreground/60">{userId}</p>
+            <p className="truncate text-sm font-medium">{userName || "User"}</p>
+            <p className="text-xs text-sidebar-foreground/60">{userId || ""}</p>
           </div>
         </div>
       </div>
