@@ -40,16 +40,6 @@ export default function InvigilatorOverview() {
     } catch (e) { toast.error(e.message || "Update failed"); }
   };
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [s, a, h] = await Promise.all([api.getInvigilatorDashboardStats(), api.getAlerts(), api.getExamHalls()]);
-        setStats(s); setAlerts(a.slice(0, 5)); setHalls(h);
-      } catch (e) { toast.error(e.message || "Failed to load"); }
-      finally { setLoading(false); }
-    })();
-  }, []);
-
   const hallName = (id) => halls.find((h) => h.id === id)?.hallNumber || "—";
 
   return (
