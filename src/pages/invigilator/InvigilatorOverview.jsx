@@ -58,6 +58,7 @@ export default function InvigilatorOverview() {
             </div>
             <DataTable
               emptyMessage="No alerts assigned to you"
+              onRowClick={(row) => setSelected({ ...row, hallName: hallName(row.hallId) })}
               columns={[
                 { header: "Type",    accessor: "violationType" },
                 { header: "Hall",    accessor: (r) => hallName(r.hallId) },
@@ -68,6 +69,44 @@ export default function InvigilatorOverview() {
               data={alerts}
             />
           </div>
+
+          <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-warning" /> Alert Details
+                </DialogTitle>
+              </DialogHeader>
+              {selected && (
+                <div className="space-y-5">
+                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center border border-border">
+                    <div className="text-center text-muted-foreground">
+                      <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Alert snapshot / video</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase tracking-wider">Alert ID</p><p className="font-medium">{selected.id}</p></div>
+                    <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase tracking-wider">Student</p><p className="font-medium">{selected.studentId}</p></div>
+                    <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase tracking-wider">Type</p><p className="font-medium">{selected.violationType}</p></div>
+                    <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase tracking-wider">Status</p><StatusBadge variant={alertVariant[selected.status] || "default"}>{selected.status}</StatusBadge></div>
+                    <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Clock className="h-3 w-3" /> When</p><p className="font-medium">{new Date(selected.timestamp).toLocaleString()}</p></div>
+                    <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1"><MapPin className="h-3 w-3" /> Hall</p><p className="font-medium">{selected.hallName}</p></div>
+                  </div>
+                  {selected.status === "pending" && (
+                    <div className="flex gap-3 pt-2">
+                      <Button className="flex-1" onClick={() => updateStatus(selected, "reviewed")}>
+                        <CheckCircle className="h-4 w-4 mr-2" /> Mark as Reviewed
+                      </Button>
+                      <Button variant="outline" className="flex-1" onClick={() => updateStatus(selected, "dismissed")}>
+                        <XCircle className="h-4 w-4 mr-2" /> Dismiss
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       )}
     </DashboardLayout>
