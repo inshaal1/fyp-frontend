@@ -19,6 +19,26 @@ export default function InvigilatorOverview() {
   const [alerts, setAlerts] = useState([]);
   const [halls, setHalls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [s, a, h] = await Promise.all([api.getInvigilatorDashboardStats(), api.getAlerts(), api.getExamHalls()]);
+      setStats(s); setAlerts(a.slice(0, 5)); setHalls(h);
+    } catch (e) { toast.error(e.message || "Failed to load"); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const updateStatus = async (row, status) => {
+    try {
+      await api.updateAlertStatus(row.id, status);
+      toast.success(`Marked ${status}`);
+      setSelected(null);
+      load();
+    } catch (e) { toast.error(e.message || "Update failed"); }
+  };
 
   useEffect(() => {
     (async () => {
